@@ -10,3 +10,4 @@ upload = st.file_uploader(label='Upload image here', type=['png','jpg', 'jpeg'])
 
 if upload:
     img = Image.open(upload)
+    st.write(type(img))
