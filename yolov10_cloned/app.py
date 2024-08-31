@@ -117,13 +117,13 @@ def app():
         gr.Examples(
             examples=[
                 [
-                    "ultralytics/assets/bus.jpg",
+                    "ultralytics/assets_/bus.jpg",
                     "yolov10s",
                     640,
                     0.25,
                 ],
                 [
-                    "ultralytics/assets/zidane.jpg",
+                    "ultralytics/assets_/zidane.jpg",
                     "yolov10s",
                     640,
                     0.25,
