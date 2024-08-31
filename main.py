@@ -1,16 +1,31 @@
 import streamlit as st
 from PIL import Image
-import matplotlib.pyplot as plt
 import cv2
 from tempfile import NamedTemporaryFile
 import requests
 from io import BytesIO
+from ultralytics import YOLOv10
+import supervision as sv
+import numpy as np
 from pytube import YouTube
 
-# Title
+model = YOLOv10('runs/detect/train/weights/best.pt')
+
 st.title('Object Detector')
 
 upload_option = st.radio("Choose an option:", ("Upload File", "Paste Link"))
+
+def process_and_display(img):
+    results = model(source=img, conf=0.25)[0]
+    detections = sv.Detections.from_ultralytics(results)
+
+    bounding_box_annotator = sv.BoundingBoxAnnotator()
+    label_annotator = sv.LabelAnnotator()
+
+    annotated_img = bounding_box_annotator.annotate(scene=img, detections=detections)
+    annotated_img = label_annotator.annotate(scene=annotated_img, detections=detections)
+
+    return annotated_img
 
 if upload_option == "Upload File":
     upload_type = st.radio("Choose upload type:", ("Image", "Video"))
@@ -19,7 +34,9 @@ if upload_option == "Upload File":
         uploaded_file = st.file_uploader(label='Upload image here', type=['png', 'jpg', 'jpeg'])
         if uploaded_file:
             img = Image.open(uploaded_file)
-            st.image(img, caption="Uploaded Image", use_column_width=True)
+            img_np = np.array(img)
+            annotated_img = process_and_display(img_np)
+            st.image(annotated_img, caption="Detected Image", use_column_width=True)
 
     elif upload_type == "Video":
         uploaded_file = st.file_uploader(label='Upload video here', type=['mp4', 'mov'])
@@ -28,17 +45,14 @@ if upload_option == "Upload File":
             tfile.write(uploaded_file.read())
 
             vid = cv2.VideoCapture(tfile.name)
-
-            st.write("Uploaded Video")
             stframe = st.empty()
 
             while vid.isOpened():
                 ret, frame = vid.read()
                 if not ret:
-                    print("Can't receive frame (stream end?). Exiting ...")
                     break
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                stframe.image(frame)
+                annotated_frame = process_and_display(frame)
+                stframe.image(annotated_frame)
 
             vid.release()
 
@@ -47,13 +61,15 @@ elif upload_option == "Paste Link":
     if link:
         try:
             response = requests.get(link)
-            response.raise_for_status() 
+            response.raise_for_status()
 
             content_type = response.headers.get('content-type')
 
             if 'image' in content_type:
                 img = Image.open(BytesIO(response.content))
-                st.image(img, caption="Image from Link", use_column_width=True)
+                img_np = np.array(img)
+                annotated_img = process_and_display(img_np)
+                st.image(annotated_img, caption="Image from Link", use_column_width=True)
 
             elif 'video' in content_type:
                 if not any(ext in link for ext in ['.mp4', '.mov', '.avi']):
@@ -62,30 +78,24 @@ elif upload_option == "Paste Link":
                     st.write("Video from Link (implementation needed)")
 
             elif "youtube.com" in link or "youtu.be" in link:
-                try:
-                    yt = YouTube(link)
-                    stream = yt.streams.get_highest_resolution()
+                yt = YouTube(link)
+                stream = yt.streams.get_highest_resolution()
 
-                    with NamedTemporaryFile(delete=False) as tfile:
-                        stream.download(output_path="", filename=tfile.name)
-                        video_path = tfile.name
+                with NamedTemporaryFile(delete=False) as tfile:
+                    stream.download(output_path="", filename=tfile.name)
+                    video_path = tfile.name
 
-                    vid = cv2.VideoCapture(video_path)
-                    st.write("Video from YouTube")
-                    stframe = st.empty()
+                vid = cv2.VideoCapture(video_path)
+                stframe = st.empty()
 
-                    while vid.isOpened():
-                        ret, frame = vid.read()
-                        if not ret:
-                            print("Can't receive frame (stream end?). Exiting ...")
-                            break
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        stframe.image(frame)
+                while vid.isOpened():
+                    ret, frame = vid.read()
+                    if not ret:
+                        break
+                    annotated_frame = process_and_display(frame)
+                    stframe.image(annotated_frame)
 
-                    vid.release()
-
-                except Exception as e:
-                    st.error(f"Error processing YouTube video: {e}")
+                vid.release()
 
             else:
                 st.error("Invalid link. Please provide a valid image or video link.")
