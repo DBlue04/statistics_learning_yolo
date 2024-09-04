@@ -50,7 +50,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-mlruns/
+# mlruns/
 
 # Translations
 *.mo
@@ -138,10 +138,10 @@ dmypy.json
 .pyre/
 
 # datasets and projects
-datasets/
-runs/
+# datasets/
+# runs/
 wandb/
-tests/
+# tests/
 .DS_Store
 
 # Neural Network weights -----------------------------------------------------------------------------------------------
