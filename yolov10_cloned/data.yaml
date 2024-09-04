@@ -1,0 +1,7 @@
+
+test: /home/kelvin/my_project/fitus/Junior - Semester 3/code/statistics_learning_yolo/yolov10_cloned/VehiclesDetectionDataset/test/images
+train: /home/kelvin/my_project/fitus/Junior - Semester 3/code/statistics_learning_yolo/yolov10_cloned/VehiclesDetectionDataset/train/images
+val: /home/kelvin/my_project/fitus/Junior - Semester 3/code/statistics_learning_yolo/yolov10_cloned/VehiclesDetectionDataset/valid/images
+
+nc: 5  # Number of classes
+names: ['Ambulance', 'Bus', 'Car', 'Motorcycle', 'Truck']
